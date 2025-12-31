@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuMind</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #4b6cb7;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    main {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4b6cb7;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3a539b;
+    }
+    .messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .message.user {
+      text-align: right;
+      color: #333;
+    }
+    .message.ai {
+      text-align: left;
+      color: #4b6cb7;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DocuMind</h1>
+    <p>Upload files and ask questions to the AI</p>
+  </header>
+  <main>
+    <div class="messages" id="messages"></div>
+
+    <input type="file" id="fileInput" multiple />
+    <textarea id="userQuestion" placeholder="Ask a question about your files..." rows="3"></textarea>
+    <button id="sendBtn">Send</button>
+  </main>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const fileInput = document.getElementById('fileInput');
+    const userQuestion = document.getElementById('userQuestion');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Helper to display messages
+    function addMessage(text, sender) {
+      const msgEl = document.createElement('div');
+      msgEl.className = 'message ' + sender;
+      msgEl.textContent = text;
+      messagesEl.appendChild(msgEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      const files = Array.from(fileInput.files);
+      const question = userQuestion.value.trim();
+
+      if (!question) return;
+
+      // Display user's question
+      addMessage(question, 'user');
+
+      // Read files as text
+      const fileContents = await Promise.all(files.map(file => 
+        new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ name: file.name, content: reader.result });
+          reader.readAsText(file);
+        })
+      ));
+
+      // Send to backend
+      try {
+        const response = await fetch('/api/chat', { // adjust if your backend URL is different
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'YOUR_SERVER_SECRET' // replace with your server secret
+          },
+          body: JSON.stringify({
+            files: fileContents,
+            history: [], // you can implement chat history later
+            userMessage: question
+          })
+        });
+
+        const data = await response.json();
+        addMessage(data.text || 'No response from AI', 'ai');
+      } catch (err) {
+        console.error(err);
+        addMessage('Error contacting AI backend.', 'ai');
+      }
+
+      userQuestion.value = '';
+      fileInput.value = '';
+    });
+  </script>
+</body>
+</html>

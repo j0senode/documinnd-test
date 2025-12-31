@@ -77,63 +77,69 @@
   </main>
 
   <script>
-    const messagesEl = document.getElementById('messages');
-    const fileInput = document.getElementById('fileInput');
-    const userQuestion = document.getElementById('userQuestion');
-    const sendBtn = document.getElementById('sendBtn');
+  const API_BASE = 'https://documind-backend-5fme.onrender.com';
 
-    // Helper to display messages
-    function addMessage(text, sender) {
-      const msgEl = document.createElement('div');
-      msgEl.className = 'message ' + sender;
-      msgEl.textContent = text;
-      messagesEl.appendChild(msgEl);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
+  const messagesEl = document.getElementById('messages');
+  const fileInput = document.getElementById('fileInput');
+  const userQuestion = document.getElementById('userQuestion');
+  const sendBtn = document.getElementById('sendBtn');
 
-    sendBtn.addEventListener('click', async () => {
-      const files = Array.from(fileInput.files);
-      const question = userQuestion.value.trim();
+  function addMessage(text, sender) {
+    const msgEl = document.createElement('div');
+    msgEl.className = 'message ' + sender;
+    msgEl.textContent = text;
+    messagesEl.appendChild(msgEl);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 
-      if (!question) return;
+  sendBtn.addEventListener('click', async () => {
+    const files = Array.from(fileInput.files);
+    const question = userQuestion.value.trim();
 
-      // Display user's question
-      addMessage(question, 'user');
+    if (!question) return;
 
-      // Read files as text
-      const fileContents = await Promise.all(files.map(file => 
+    addMessage(question, 'user');
+
+    const fileContents = await Promise.all(
+      files.map(file =>
         new Promise(resolve => {
           const reader = new FileReader();
-          reader.onload = () => resolve({ name: file.name, content: reader.result });
+          reader.onload = () =>
+            resolve({ name: file.name, content: reader.result });
           reader.readAsText(file);
         })
-      ));
+      )
+    );
 
-      // Send to backend
-      try {
-        const response = await fetch('/api/chat', { // adjust if your backend URL is different
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'YOUR_SERVER_SECRET' // replace with your server secret
-          },
-          body: JSON.stringify({
-            files: fileContents,
-            history: [], // you can implement chat history later
-            userMessage: question
-          })
-        });
+    try {
+      const response = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'YOUR_SERVER_SECRET'
+        },
+        body: JSON.stringify({
+          files: fileContents,
+          history: [],
+          userMessage: question
+        })
+      });
 
-        const data = await response.json();
-        addMessage(data.text || 'No response from AI', 'ai');
-      } catch (err) {
-        console.error(err);
-        addMessage('Error contacting AI backend.', 'ai');
+      if (!response.ok) {
+        throw new Error(`Server error ${response.status}`);
       }
 
-      userQuestion.value = '';
-      fileInput.value = '';
-    });
-  </script>
+      const data = await response.json();
+      addMessage(data.text || 'No response from AI', 'ai');
+    } catch (err) {
+      console.error(err);
+      addMessage('Error contacting AI backend.', 'ai');
+    }
+
+    userQuestion.value = '';
+    fileInput.value = '';
+  });
+</script>
 </body>
 </html>
+

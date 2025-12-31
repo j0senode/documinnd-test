@@ -4,64 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocuMind</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #4b6cb7;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    main {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      border-radius: 8px;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    button {
-      background: #4b6cb7;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #3a539b;
-    }
-    .messages {
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 300px;
-      overflow-y: auto;
-      margin-bottom: 20px;
-      background: #f9f9f9;
-    }
-    .message {
-      margin-bottom: 10px;
-    }
-    .message.user {
-      text-align: right;
-      color: #333;
-    }
-    .message.ai {
-      text-align: left;
-      color: #4b6cb7;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
@@ -76,79 +19,7 @@
     <button id="sendBtn">Send</button>
   </main>
 
-  <script>
-    const API_BASE = 'https://documind-backend-5fme.onrender.com';
-
-    const messagesEl = document.getElementById('messages');
-    const fileInput = document.getElementById('fileInput');
-    const userQuestion = document.getElementById('userQuestion');
-    const sendBtn = document.getElementById('sendBtn');
-
-    // Persist uploaded files and chat history for the current browser session
-    let sessionFiles = [];
-    let chatHistory = [];
-
-    function addMessage(text, sender) {
-      const msgEl = document.createElement('div');
-      msgEl.className = 'message ' + sender;
-      msgEl.textContent = text;
-      messagesEl.appendChild(msgEl);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-
-    fileInput.addEventListener('change', async () => {
-      const files = Array.from(fileInput.files);
-      const fileContents = await Promise.all(
-        files.map(file =>
-          new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = () => resolve({ name: file.name, content: reader.result });
-            reader.readAsText(file);
-          })
-        )
-      );
-
-      // Merge newly uploaded files with session files
-      sessionFiles = [...sessionFiles, ...fileContents];
-
-      // Reset input
-      fileInput.value = '';
-    });
-
-    sendBtn.addEventListener('click', async () => {
-      const question = userQuestion.value.trim();
-      if (!question) return;
-
-      addMessage(question, 'user');
-      chatHistory.push({ role: 'user', content: question });
-
-      try {
-        const response = await fetch(`${API_BASE}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            files: sessionFiles,
-            history: chatHistory,
-            userMessage: question
-          })
-        });
-
-        if (!response.ok) throw new Error(`Server error ${response.status}`);
-
-        const data = await response.json();
-        const aiText = data.text || 'No response from AI';
-        addMessage(aiText, 'ai');
-        chatHistory.push({ role: 'assistant', content: aiText });
-      } catch (err) {
-        console.error(err);
-        addMessage('Error contacting AI backend.', 'ai');
-      }
-
-      userQuestion.value = '';
-    });
-  </script>
+  <script src="index.js"></script>
 </body>
 </html>
-
-
 

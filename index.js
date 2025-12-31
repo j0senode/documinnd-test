@@ -4,10 +4,36 @@ const messagesEl = document.getElementById('messages');
 const fileInput = document.getElementById('fileInput');
 const userQuestion = document.getElementById('userQuestion');
 const sendBtn = document.getElementById('sendBtn');
+const uploadedFilesEl = document.getElementById('uploadedFiles');
 
 // Persist uploaded files and chat history for the current browser session
 let sessionFiles = [];
 let chatHistory = [];
+
+function updateFilesList() {
+  if (sessionFiles.length === 0) {
+    uploadedFilesEl.innerHTML = '<div class="files-header">Uploaded Files</div><div class="no-files">No files uploaded</div>';
+  } else {
+    let html = '<div class="files-header">Uploaded Files (' + sessionFiles.length + ')</div>';
+    sessionFiles.forEach((file, index) => {
+      html += `
+        <div class="file-item">
+          <span>${file.name}</span>
+          <button class="remove-btn" onclick="removeFile(${index})">Remove</button>
+        </div>
+      `;
+    });
+    uploadedFilesEl.innerHTML = html;
+  }
+}
+
+function removeFile(index) {
+  sessionFiles.splice(index, 1);
+  updateFilesList();
+}
+
+// Make removeFile globally accessible
+window.removeFile = removeFile;
 
 function addMessage(text, sender) {
   const msgEl = document.createElement('div');
@@ -31,6 +57,9 @@ fileInput.addEventListener('change', async () => {
 
   // Merge newly uploaded files with session files
   sessionFiles = [...sessionFiles, ...fileContents];
+
+  // Update the files display
+  updateFilesList();
 
   // Reset input
   fileInput.value = '';
@@ -67,3 +96,6 @@ sendBtn.addEventListener('click', async () => {
 
   userQuestion.value = '';
 });
+
+// Initialize the files list display on page load
+updateFilesList();
